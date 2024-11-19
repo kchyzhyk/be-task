@@ -21,10 +21,6 @@ OPENEI_API_KEY = env('OPENEI_API_KEY')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-^_&umy^xs64wvw-%gp(y-)(74_%a-vgu5s_#m7(g-s0*pc^1d1"
 
