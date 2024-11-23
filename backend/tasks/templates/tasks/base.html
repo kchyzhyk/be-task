@@ -1,0 +1,83 @@
+<!-- base.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Address Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDkPCeMz0ASAkuIE30jFPNEziJ6QKIGfMU&libraries=places"></script>
+  </head>
+  <body class="bg-gray-100 text-gray-800">
+    {% block content %}
+
+    <h1 class="text-3xl font-semibold text-center mt-10">
+      Search for an Address
+    </h1>
+
+    <div class="max-w-lg mx-auto mt-6">
+      <form
+        method="POST"
+        action="{% url 'geocode_address' %}"
+        class="bg-white p-6 rounded-lg shadow-md"
+      >
+        {% csrf_token %}
+        <input
+          id="address-input"
+          type="text"
+          name="address"
+          placeholder="Type an address..."
+          required
+          class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          type="submit"
+          class="mt-4 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
+        >
+          Search
+        </button>
+      </form>
+    </div>
+
+    {% if address or longitude and latitude %}
+    <div class="mt-6 max-w-lg mx-auto p-6 bg-white rounded-lg shadow-md">
+      <h2 class="text-2xl font-semibold">Geocoded Address</h2>
+      <p><strong>Address:</strong> {{ address }}</p>
+      <p><strong>Latitude:</strong> {{ latitude }}</p>
+      <p><strong>Longitude:</strong> {{ longitude }}</p>
+    </div>
+    {% endif %} {% if address and data %}
+    <div class="mt-6 max-w-lg mx-auto p-6 bg-white rounded-lg shadow-md">
+      <h2 class="text-2xl font-semibold">Geocoded Data</h2>
+      <ul class="mt-4 space-y-4">
+        {% for item in data %}
+        <li class="bg-gray-100 p-4 rounded-md shadow">
+          <p><strong>Utility:</strong> {{ item.utility }}</p>
+          <p><strong>Name:</strong> {{ item.name }}</p>
+          <p><strong>Start Date:</strong> {{ item.startdate }}</p>
+          <p><strong>Description:</strong> {{ item.description }}</p>
+          <p><strong>Sector:</strong> {{ item.sector }}</p>
+          <p><strong>Service Type:</strong> {{ item.servicetype }}</p>
+          <p>
+            <a
+              href="{{ item.uri }}"
+              target="_blank"
+              class="text-blue-600 hover:underline"
+              >View More</a
+            >
+          </p>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const input = document.getElementById("address-input");
+        const autocomplete = new google.maps.places.Autocomplete(input);
+      });
+    </script>
+    {% endblock %}
+  </body>
+</html>

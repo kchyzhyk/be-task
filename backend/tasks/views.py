@@ -1,39 +1,24 @@
 from django.shortcuts import render
+from .api import fetch_geocode_address, get_utility_rates
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import Task
-from .serializers import TaskSerializer
-import os
-from rest_framework.generics import RetrieveUpdateDestroyAPIView
-
-class TaskListCreate(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        tasks = Task.objects.filter(user=request.user)
-        serializer = TaskSerializer(tasks, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = TaskSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-def index(request):
-    # Build the absolute path to index.html
-    index_html_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'frontend', 'build', 'index.html')
-
-    # Debugging: Print the path to make sure it's correct
-    print("Rendering template:", index_html_path)
+def geocode_address(request):
+    address = ''
+    latitude = ""
+    longitude = ''
+    error = ''
     
-    return render(request, 'index.html')
+    if request.method == 'POST':
+        address, latitude, longitude, error = fetch_geocode_address(request)
+        data = get_utility_rates()
+        
+    
+    return render(request, 'tasks/base.html', 
+                {"address": address,
+                'latitude': latitude, 
+                'longitude': longitude, 
+                "error": error,
+                "data": data
+                })
 
-
-class TaskRetrieveUpdateDelete(RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
-    queryset = Task.objects.all()
-    serializer_class = TaskSerializer
+def home(request):
+    return render(request, 'tasks/base.html')

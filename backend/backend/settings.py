@@ -11,10 +11,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+GEOCODING_API_KEY = 'AIzaSyDkPCeMz0ASAkuIE30jFPNEziJ6QKIGfMU'
+OPENEI_API_KEY = 'mkdgHUtGVPsw622mpes3u81uvDQzGOPqqx92w62M'
 
 
 # Quick-start development settings - unsuitable for production
@@ -40,7 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "tasks",
     'rest_framework',
-     'rest_framework.authtoken'
+    'rest_framework.authtoken'
 ]
 
 REST_FRAMEWORK = {
@@ -51,8 +52,8 @@ REST_FRAMEWORK = {
 }
 
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [os.path.join(BASE_DIR,'frontend', 'build', 'static')]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [BASE_DIR]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -70,7 +71,7 @@ ROOT_URLCONF = "backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, 'frontend', 'build')],
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
