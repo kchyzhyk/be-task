@@ -1,4 +1,4 @@
-<!-- base.html -->
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -11,64 +11,81 @@
   <body class="bg-gray-100 text-gray-800">
     {% block content %}
 
-    <h1 class="text-3xl font-semibold text-center mt-10">
-      Search for an Address
-    </h1>
-
-    <div class="max-w-lg mx-auto mt-6">
-      <form
-        method="POST"
-        action="{% url 'geocode_address' %}"
-        class="bg-white p-6 rounded-lg shadow-md"
-      >
-        {% csrf_token %}
-        <input
-          id="address-input"
-          type="text"
-          name="address"
-          placeholder="Type an address..."
-          required
-          class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          type="submit"
-          class="mt-4 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
+    <div class="mt-6 max-w-4xl mx-auto grid grid-cols-2 gap-6">
+      <div>
+        <form
+          method="POST"
+          action="{% url 'geocode_address' %}"
+          class="bg-white p-6 rounded-lg shadow-md"
         >
-          Search
-        </button>
-      </form>
+          {% csrf_token %}
+          <label for="address-input">Address</label><br />
+          <input
+            id="address-input"
+            type="text"
+            name="address"
+            placeholder="Type an address..."
+            required
+            class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <label for="kwh-consumption">kWh consumption</label><br />
+          <input
+            id="kwh-consumption"
+            type="number"
+            name="kwh-consumption"
+            placeholder="1000"
+            min="1000"
+            max="10000"
+            class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <label for="percentage">Percentage escalator</label><br />
+          <input
+            id="percentage"
+            type="number"
+            name="kwh-consumption"
+            placeholder="4"
+            min="4"
+            max="10"
+            class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            class="mt-4 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
+          >
+            Search
+          </button>
+        </form>
+      </div>
+
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        {% if address %}
+        <h2 class="text-2xl font-semibold">Geocoded Address</h2>
+        <p><strong>Address:</strong> {{ address }}</p>
+        <p><strong>The average ¢/kWh:</strong></p>
+        <p><strong>Most Likely Tariff:</strong></p>
+        <p><strong>Cost of their utility for the first year:</strong></p>
+        {% endif %}
+      </div>
     </div>
 
-    {% if address or longitude and latitude %}
-    <div class="mt-6 max-w-lg mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 class="text-2xl font-semibold">Geocoded Address</h2>
-      <p><strong>Address:</strong> {{ address }}</p>
-      <p><strong>Latitude:</strong> {{ latitude }}</p>
-      <p><strong>Longitude:</strong> {{ longitude }}</p>
-    </div>
-    {% endif %} {% if address and data %}
-    <div class="mt-6 max-w-lg mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 class="text-2xl font-semibold">Geocoded Data</h2>
-      <ul class="mt-4 space-y-4">
-        {% for item in data %}
-        <li class="bg-gray-100 p-4 rounded-md shadow">
-          <p><strong>Utility:</strong> {{ item.utility }}</p>
-          <p><strong>Name:</strong> {{ item.name }}</p>
-          <p><strong>Start Date:</strong> {{ item.startdate }}</p>
-          <p><strong>Description:</strong> {{ item.description }}</p>
-          <p><strong>Sector:</strong> {{ item.sector }}</p>
-          <p><strong>Service Type:</strong> {{ item.servicetype }}</p>
-          <p>
-            <a
-              href="{{ item.uri }}"
-              target="_blank"
-              class="text-blue-600 hover:underline"
-              >View More</a
-            >
-          </p>
-        </li>
-        {% endfor %}
-      </ul>
+    {% if data %}
+    <div
+      class="mt-6 max-w-4xl mx-auto grid grid-cols-2 gap-6 bg-white rounded-lg shadow-md"
+    >
+      <div class="col-span-2 p-6">
+        <h2 class="text-2xl font-semibold">Utility Tariffs Data</h2>
+        <ul class="mt-4 space-y-4">
+          {% for item in data %}
+          <li class="bg-gray-100 p-4 rounded-md shadow">
+            <p><strong>Utility:</strong> {{ item.utility }} - {{item.name}}</p>
+            <p><strong>Start Date:</strong> {{ item.startdate }}</p>
+            <p><strong>End Date:</strong> {{ item.enddate }}</p>
+            <p><strong>Sector:</strong> {{ item.sector }}</p>
+            <p><strong>Service Type:</strong> {{ item.servicetype }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
     {% endif %}
 
