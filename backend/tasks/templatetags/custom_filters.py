@@ -14,7 +14,6 @@ def add_styles(value):
     if section:
         section['class'] = section.get('class', []) + ['strux_view_table', 'col-span-2']
     
-    # Adding styles to the header
     header = soup.find('header')
     if header:
         header['class'] = header.get('class', []) + ['strux_view_header', 'grid', 'grid-cols-5', 'gap-2', 'p-2', 'text-center', 'font-semibold']

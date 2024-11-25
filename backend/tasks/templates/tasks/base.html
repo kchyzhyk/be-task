@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Address Search</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDkPCeMz0ASAkuIE30jFPNEziJ6QKIGfMU&libraries=places"></script>
   </head>
   <body class="bg-gray-100 text-gray-800">
@@ -34,6 +35,7 @@
             type="number"
             name="kwh-consumption"
             placeholder="1000"
+            required
             min="1000"
             max="10000"
             class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -44,6 +46,7 @@
             type="number"
             name="kwh-consumption"
             placeholder="4"
+            required
             min="4"
             max="10"
             class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -58,13 +61,35 @@
       </div>
 
       <div class="bg-white p-6 rounded-lg shadow-md">
-        {% if address %}
+        {% if address and costs and average_costs %}
         <h2 class="text-2xl font-semibold">Geocoded Address</h2>
         <p><strong>Address:</strong> {{ address }}</p>
-        <p><strong>The average ¢/kWh:</strong></p>
-        <p><strong>Most Likely Tariff:</strong></p>
-        <p><strong>Cost of their utility for the first year:</strong></p>
-        {% endif %}
+        {% for item in average_costs %}
+        <p>
+          <strong> The average ¢/kWh: Tariff -{{item|floatformat:2}}¢ </strong>
+        </p>
+        {% endfor %} {% if most_likely_tariff %}
+        <p>
+          <strong>Most Likely Tariff(without Consumption):</strong>
+          {{most_likely_tariff.value }} - Cost: {{ min_cost|floatformat:2 }}$
+        </p>
+        {% endif %} {% for item in costs %}
+        <p>
+          <strong
+            >Cost of utility for Consumption: Tariff {{forloop.counter}} -
+            ${{item|floatformat:2 }}</strong
+          >
+        </p>
+        {% endfor %} {% endif %}
+      </div>
+    </div>
+
+    <div
+      class="mt-6 max-w-4xl mx-auto grid grid-cols-2 gap-6 bg-white rounded-lg shadow-md"
+    >
+      <div class="col-span-2 p-6">
+        <h1>Monthly Energy Cost Over the Year</h1>
+        <canvas id="energyCostChart" width="400" height="200"></canvas>
       </div>
     </div>
 
@@ -78,8 +103,9 @@
           {% for item in data %}
           <li class="bg-gray-100 p-4 rounded-md shadow">
             <p><strong>Utility:</strong> {{ item.utility }} - {{item.name}}</p>
-            <p><strong>Start Date:</strong> {{ item.startdate }}</p>
-            <p><strong>End Date:</strong> {{ item.enddate }}</p>
+            <p>
+              <strong>Date:</strong> {{ item.startdate }} - {{ item.enddate }}
+            </p>
             <p><strong>Sector:</strong> {{ item.sector }}</p>
             <p><strong>Service Type:</strong> {{ item.servicetype }}</p>
           </li>
@@ -88,11 +114,58 @@
       </div>
     </div>
     {% endif %}
-
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         const input = document.getElementById("address-input");
         const autocomplete = new google.maps.places.Autocomplete(input);
+      });
+      const ctx = document.getElementById("energyCostChart").getContext("2d");
+      const monthlyCosts = JSON.parse("{{ monthly_costs|escapejs }}");
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      const datasets = monthlyCosts.map((costs, index) => ({
+        label: `Tariff ${index + 1}`,
+        data: costs,
+        borderColor: `hsl(${(index * 40) % 360}, 100%, 50%)`,
+        backgroundColor: `hsla(${(index * 40) % 360}, 100%, 50%, 0.2)`,
+        fill: true,
+      }));
+
+      const energyCostChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: months,
+          datasets: datasets,
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "Cost in $",
+              },
+            },
+            x: {
+              title: {
+                display: true,
+                text: "Months",
+              },
+            },
+          },
+        },
       });
     </script>
     {% endblock %}

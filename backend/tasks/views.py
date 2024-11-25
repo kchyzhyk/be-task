@@ -3,13 +3,18 @@ from .api import fetch_geocode_address, get_utility_rates
 from .models import GeocodeAddress, UtilityRate, WeekdaySchedule
 from bs4 import BeautifulSoup
 import requests
+from datetime import datetime, timedelta
+import calendar
 
 weekday_schedule = {}
 
 def geocode_address(request):
     address = ''
     error = ''
+    costs = []
     data = []
+    average_costs = []
+    monthly_costs = []
     
     if request.method == 'POST':
         address, error = fetch_geocode_address(request)
@@ -22,6 +27,13 @@ def geocode_address(request):
             tariffs = fetch_html_container(item['uri'],"#energy_rate_strux_table" )
             schedules = extract_periods_weekday(item['uri'])
             pricing_matrix = generate_period_schedule(tariffs, schedules)
+            cost = calculate_energy_cost(pricing_matrix, 1000)
+            most_likely_tariff, min_cost = calculate_most_likely_tariff(pricing_matrix, 1000)
+            costs.append(cost)
+            average_cost = calculate_average_rate(pricing_matrix)
+            average_costs.append(average_cost)
+            monthly_cost = calculate_monthly_energy_cost(pricing_matrix, 1000)
+            monthly_costs.append(monthly_cost)
             utility_rate = UtilityRate.objects.create(
                     geocode_address=geocode_address,
                     utility_name=item.get('utility'),
@@ -40,7 +52,12 @@ def geocode_address(request):
     return render(request, 'tasks/base.html', 
                 {"address": address,
                 "error": error,
-                "data": data
+                "data": data,
+                "costs": costs, 
+                "average_costs": average_costs,
+                "most_likely_tariff": most_likely_tariff,
+                "min_cost": min_cost,
+                "monthly_costs": monthly_costs, 
                 })
 
 def fetch_html_container(url, container_selector):
@@ -85,9 +102,6 @@ def extract_periods_weekday(url):
 
 def home(request):
     return render(request, 'tasks/base.html')
-
-
-from datetime import datetime, timedelta
 
 def generate_period_schedule(tariffs_html, schedule_json):
     soup = BeautifulSoup(tariffs_html, 'html.parser')
@@ -161,12 +175,126 @@ def generate_period_schedule(tariffs_html, schedule_json):
                 "endtime": datetime(2024, list(schedule_json.keys()).index(month) + 1, 1, 23, 59).isoformat()
             }]
         month_schedule.append(month_data)
-    
-    print({
-            "periods": periods,
-            "month_schedule": month_schedule
-        })
     return {
         "periods": periods,
         "month_schedule": month_schedule
     }
+    
+
+
+def calculate_energy_cost(data, total_consumption, escalator=4):
+    period_hours = {}
+    for month_data in data["month_schedule"]:
+        for month, intervals in month_data.items():
+            for interval in intervals:
+                period = interval["period"]
+                start_time = datetime.fromisoformat(interval["starttime"])
+                end_time = datetime.fromisoformat(interval["endtime"])
+
+                year = start_time.year
+                month_number = start_time.month
+                days_in_month = calendar.monthrange(year, month_number)[1]
+
+                hours = (end_time - start_time).total_seconds() / 3600
+                period_hours[period] = period_hours.get(period, 0) + (hours * days_in_month / 30)
+
+    total_hours = sum(period_hours.values())
+    period_energy = {period: (hours / total_hours) * total_consumption for period, hours in period_hours.items()}
+    total_cost = 0
+    for period, energy in period_energy.items():
+        for tariff in data["periods"]:
+            if tariff["value"] == period:
+                max_usage = float(tariff["max_usage"]) if tariff["max_usage"] not in [None, "None"] else None
+                rate = tariff["rate"]
+                escalated_rate = rate * (1 + escalator / 100)
+                if max_usage and energy > max_usage:
+                    total_cost += max_usage * escalated_rate
+                    energy -= max_usage
+
+                total_cost += energy * escalated_rate
+                break
+
+    print(f"Общая стоимость для {total_consumption} кВт⋅ч с учётом escalator{escalator}: ${total_cost:.2f}")
+    return total_cost
+
+
+def calculate_average_rate(pricing_matrix):
+    total_cost = 0
+    total_consumption = 0
+
+    for period_data in pricing_matrix["periods"]:
+        period_value = int(period_data["value"])
+        rate = period_data["rate"]
+        max_usage = float(period_data["max_usage"]) if period_data["max_usage"] not in [None, "None"] else None
+        if max_usage:
+            consumption = max_usage
+        else:
+            consumption = 0 
+        total_consumption += consumption
+        if consumption > 0:
+            cost_for_period = consumption * rate
+            total_cost += cost_for_period
+    if total_consumption > 0:
+        average_rate_per_kWh = (total_cost / total_consumption) * 100
+        print(f"Средняя стоимость за кВт⋅ч за год: {average_rate_per_kWh:.2f}¢")
+        return average_rate_per_kWh
+    # add tariff id
+    else:
+        return 0
+
+
+def calculate_most_likely_tariff(pricing_matrix, total_consumption):
+    most_likely_tariff = None
+    min_cost = float('inf') # as infinity
+
+    for tariff in pricing_matrix["periods"]:
+        rate = tariff["rate"]
+        max_usage = float(tariff["max_usage"]) if tariff["max_usage"] not in [None, "None"] else None
+
+        if max_usage and total_consumption > max_usage:
+            cost = max_usage * rate
+            remaining_consumption = total_consumption - max_usage
+            cost += remaining_consumption * rate
+        else:
+            cost = total_consumption * rate
+
+        if cost < min_cost:
+            min_cost = cost
+            most_likely_tariff = tariff
+
+    return most_likely_tariff, min_cost
+
+
+
+def calculate_monthly_energy_cost(pricing_matrix, total_consumption):
+    monthly_costs = []
+    for tariff in pricing_matrix["periods"]:
+        monthly_cost = []
+        for month_data in pricing_matrix["month_schedule"]:
+            for month, intervals in month_data.items():
+                month_cost = 0
+
+                period_hours = {}
+                for interval in intervals:
+                    period = interval["period"]
+                    start_time = datetime.fromisoformat(interval["starttime"])
+                    end_time = datetime.fromisoformat(interval["endtime"])
+
+                    hours = (end_time - start_time).total_seconds() / 3600
+                    period_hours[period] = period_hours.get(period, 0) + hours
+
+                total_hours = sum(period_hours.values())
+                period_energy = {period: (hours / total_hours) * total_consumption for period, hours in period_hours.items()}
+
+                for period, energy in period_energy.items():
+                    if tariff["value"] == period:
+                        rate = tariff["rate"]
+                        escalator = 4
+
+                        escalated_rate = rate * (1 + escalator / 100)
+                        month_cost += energy * escalated_rate
+
+                monthly_cost.append(month_cost)
+        monthly_costs.append(monthly_cost)
+
+    return monthly_costs
