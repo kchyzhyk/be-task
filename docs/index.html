@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Address Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDkPCeMz0ASAkuIE30jFPNEziJ6QKIGfMU&libraries=places"></script>
+  </head>
+  <body class="bg-gray-100 text-gray-800">
+    
+
+    <div class="mt-6 max-w-4xl mx-auto grid grid-cols-2 gap-6">
+      <div>
+        <form
+          method="POST"
+          action="/"
+          class="bg-white p-6 rounded-lg shadow-md"
+        >
+          
+          <label for="address-input">Address</label><br />
+          <input
+            id="address-input"
+            type="text"
+            name="address"
+            placeholder="Type an address..."
+            required
+            class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <label for="kwh-consumption">kWh consumption</label><br />
+          <input
+            id="kwh-consumption"
+            type="number"
+            name="kwh-consumption"
+            placeholder="1000"
+            required
+            min="1000"
+            max="10000"
+            class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <label for="percentage">Percentage escalator</label><br />
+          <input
+            id="percentage"
+            type="number"
+            name="kwh-consumption"
+            placeholder="4"
+            required
+            min="4"
+            max="10"
+            class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            class="mt-4 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
+          >
+            Search
+          </button>
+        </form>
+      </div>
+
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        
+      </div>
+    </div>
+
+    <div
+      class="mt-6 max-w-4xl mx-auto grid grid-cols-2 gap-6 bg-white rounded-lg shadow-md"
+    >
+      <div class="col-span-2 p-6">
+        <h1>Monthly Energy Cost Over the Year</h1>
+        <canvas id="energyCostChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+
+    
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const input = document.getElementById("address-input");
+        const autocomplete = new google.maps.places.Autocomplete(input);
+      });
+      const ctx = document.getElementById("energyCostChart").getContext("2d");
+      const monthlyCosts = JSON.parse("");
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      const datasets = monthlyCosts.map((costs, index) => ({
+        label: `Tariff ${index + 1}`,
+        data: costs,
+        borderColor: `hsl(${(index * 40) % 360}, 100%, 50%)`,
+        backgroundColor: `hsla(${(index * 40) % 360}, 100%, 50%, 0.2)`,
+        fill: true,
+      }));
+
+      const energyCostChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: months,
+          datasets: datasets,
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "Cost in $",
+              },
+            },
+            x: {
+              title: {
+                display: true,
+                text: "Months",
+              },
+            },
+          },
+        },
+      });
+    </script>
+    
+  </body>
+</html>
