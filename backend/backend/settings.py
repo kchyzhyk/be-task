@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -52,7 +53,8 @@ REST_FRAMEWORK = {
 }
 
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [BASE_DIR]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 
 MIDDLEWARE = [
@@ -71,7 +73,7 @@ ROOT_URLCONF = "backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, 'tasks','templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

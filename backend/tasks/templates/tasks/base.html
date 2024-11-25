@@ -66,7 +66,10 @@
         <p><strong>Address:</strong> {{ address }}</p>
         {% for item in average_costs %}
         <p>
-          <strong> The average ¢/kWh: Tariff -{{item|floatformat:2}}¢ </strong>
+          <strong>
+            The average ¢/kWh: Tariff {{ forloop.counter }} -
+            {{item|floatformat:2}}¢
+          </strong>
         </p>
         {% endfor %} {% if most_likely_tariff %}
         <p>
@@ -76,7 +79,7 @@
         {% endif %} {% for item in costs %}
         <p>
           <strong
-            >Cost of utility for Consumption: Tariff {{forloop.counter}} -
+            >Cost of utility for the first year: Tariff {{forloop.counter}} -
             ${{item|floatformat:2 }}</strong
           >
         </p>

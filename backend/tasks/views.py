@@ -55,8 +55,8 @@ def geocode_address(request):
                 "data": data,
                 "costs": costs, 
                 "average_costs": average_costs,
-                "most_likely_tariff": most_likely_tariff,
-                "min_cost": min_cost,
+                # "most_likely_tariff": most_likely_tariff,
+                # "min_cost": min_cost,
                 "monthly_costs": monthly_costs, 
                 })
 
