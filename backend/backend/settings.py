@@ -53,8 +53,8 @@ REST_FRAMEWORK = {
 }
 
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / 'backend' / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'backend' / 'static']
 
 
 MIDDLEWARE = [
